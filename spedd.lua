@@ -12,11 +12,12 @@ local function setHighSpeed(speed)
 end
 
 -- Apply speed initially
-setHighSpeed(5000)
+setHighSpeed(100000)
 
 -- Reapply on respawn
 LocalPlayer.CharacterAdded:Connect(function(char)
     char:WaitForChild("Humanoid")
-    setHighSpeed(5000)
+    setHighSpeed(100000)
 end)
+
 
