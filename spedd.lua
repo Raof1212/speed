@@ -5,9 +5,9 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 local HIGH_JUMP_POWER = 30
-local HIGH_WALK_SPEED = 35
+local HIGH_WALK_SPEED = 25
 local DEFAULT_JUMP_POWER = 30
-local DEFAULT_WALK_SPEED = 35
+local DEFAULT_WALK_SPEED = 25
 
 local jumpEnabled = false
 local speedEnabled = false
@@ -53,6 +53,7 @@ if LocalPlayer.Character then
         SetupToggles(humanoid)
     end
 end
+
 
 
 
