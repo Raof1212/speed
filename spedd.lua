@@ -4,9 +4,9 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
-local HIGH_JUMP_POWER = 500
+local HIGH_JUMP_POWER = 100
 local HIGH_WALK_SPEED = 100
-local DEFAULT_JUMP_POWER = 500
+local DEFAULT_JUMP_POWER = 100
 local DEFAULT_WALK_SPEED = 1000
 
 local jumpEnabled = false
@@ -53,6 +53,7 @@ if LocalPlayer.Character then
         SetupToggles(humanoid)
     end
 end
+
 
 
 
