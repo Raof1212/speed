@@ -1,59 +1,33 @@
 -- Combined Speed & Jump Toggle Script (LocalScript)
+--// Example Script Hub
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("MyHub V1", "DarkTheme")
 
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
+-- Tabs
+local Tab1 = Window:NewTab("Target")
+local Tab2 = Window:NewTab("Client")
+local Tab3 = Window:NewTab("Misc")
+local Tab4 = Window:NewTab("Credits")
 
-local LocalPlayer = Players.LocalPlayer
-local HIGH_JUMP_POWER = 100
-local HIGH_WALK_SPEED = 100
-local DEFAULT_JUMP_POWER = 100
-local DEFAULT_WALK_SPEED = 1000
-
-local jumpEnabled = false
-local speedEnabled = false
-
--- Utility: toggle jump
-local function SetHighJump(humanoid, state)
-    humanoid.JumpPower = state and HIGH_JUMP_POWER or DEFAULT_JUMP_POWER
-end
-
--- Utility: toggle speed
-local function SetWalkSpeed(humanoid, state)
-    humanoid.WalkSpeed = state and HIGH_WALK_SPEED or DEFAULT_WALK_SPEED
-end
-
--- Setup toggles for a given humanoid
-local function SetupToggles(humanoid)
-    UserInputService.InputBegan:Connect(function(input, gp)
-        if gp then return end
-        if input.KeyCode == Enum.KeyCode.J then
-            jumpEnabled = not jumpEnabled
-            SetHighJump(humanoid, jumpEnabled)
-        elseif input.KeyCode == Enum.KeyCode.K then
-            speedEnabled = not speedEnabled
-            SetWalkSpeed(humanoid, speedEnabled)
-        end
-    end)
-end
-
--- Initialize when character spawns
-LocalPlayer.CharacterAdded:Connect(function(char)
-    local humanoid = char:WaitForChild("Humanoid")
-    SetHighJump(humanoid, jumpEnabled)
-    SetWalkSpeed(humanoid, speedEnabled)
-    SetupToggles(humanoid)
+-- Sections
+local Section1 = Tab1:NewSection("Target Tools")
+Section1:NewButton("Set Nearest", "Locks onto nearest player", function()
+    print("Nearest player locked")
 end)
 
--- If already spawned
-if LocalPlayer.Character then
-    local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        SetHighJump(humanoid, jumpEnabled)
-        SetWalkSpeed(humanoid, speedEnabled)
-        SetupToggles(humanoid)
-    end
-end
+Section1:NewTextBox("Input Target", "Enter username", function(txt)
+    print("Target: "..txt)
+end)
 
+Section1:NewButton("Goto Player", "Teleports to target", function()
+    print("Teleporting...")
+end)
+
+-- Example Trolling Section
+local Section2 = Tab3:NewSection("Trolling")
+Section2:NewButton("Copy Username", "Copies username", function()
+    setclipboard(game.Players.LocalPlayer.Name)
+end)
 
 
 
