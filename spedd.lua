@@ -273,7 +273,18 @@ end
 
 RunService.RenderStepped:Connect(function()
     if tabToggle and aiming and Aimbot.Enabled and aimFlowTrigger then
-        if
+        if not IsValidTarget(currentTarget) then
+            currentTarget = GetClosestToCrosshair()
+        end
+        if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild(Aimbot.AimPart) then
+            local head = currentTarget.Character[Aimbot.AimPart]
+            local predictedPos = head.Position + (head.Velocity * Aimbot.Prediction)
+            local aimCFrame = CFrame.new(Camera.CFrame.Position, predictedPos)
+            Camera.CFrame = Camera.CFrame:Lerp(aimCFrame, Aimbot.Sensitivity)
+        end
+        aimFlowTrigger = false
+    end
+end)
 
 
 
