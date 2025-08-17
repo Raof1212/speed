@@ -1,186 +1,162 @@
--- Services
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local root = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
+-- Roben V1 Script Hub
 
--- GUI Setup
-local gui = Instance.new("ScreenGui")
-gui.Parent = player:WaitForChild("PlayerGui")
-gui.ResetOnSpawn = false
+-- Load UI Library
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Roben V1", "DarkTheme")
 
--- Theme
-local theme = {Dark={bg=Color3.fromRGB(30,30,30), fg=Color3.fromRGB(255,255,255)}, Light={bg=Color3.fromRGB(245,245,245), fg=Color3.fromRGB(0,0,0)}}
-local currentTheme = "Dark"
+----------------------------------------------------------------------
+-- MAIN TAB
+----------------------------------------------------------------------
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Movement")
 
--- Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0,400,0,500)
-mainFrame.Position = UDim2.new(0.5,-200,0.5,-250)
-mainFrame.BackgroundColor3 = theme[currentTheme].bg
-mainFrame.BorderSizePixel = 0
-mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
-mainFrame.Parent = gui
-
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,0,0,50)
-title.Text = "Roben Dashboard"
-title.BackgroundTransparency = 1
-title.TextColor3 = theme[currentTheme].fg
-title.Font = Enum.Font.GothamBold
-title.TextSize = 24
-title.Parent = mainFrame
-
--- Theme Toggle
-local themeBtn = Instance.new("TextButton")
-themeBtn.Size = UDim2.new(0,120,0,40)
-themeBtn.Position = UDim2.new(1,-130,0,10)
-themeBtn.Text = "Toggle Theme"
-themeBtn.BackgroundColor3 = theme[currentTheme].bg
-themeBtn.TextColor3 = theme[currentTheme].fg
-themeBtn.Font = Enum.Font.Gotham
-themeBtn.TextSize = 14
-themeBtn.Parent = mainFrame
-
-themeBtn.MouseButton1Click:Connect(function()
-    currentTheme = currentTheme=="Dark" and "Light" or "Dark"
-    mainFrame.BackgroundColor3 = theme[currentTheme].bg
-    title.TextColor3 = theme[currentTheme].fg
-    themeBtn.BackgroundColor3 = theme[currentTheme].bg
-    themeBtn.TextColor3 = theme[currentTheme].fg
+-- Adjustable Walk Speed
+MainSection:NewSlider("Walk Speed", "Adjust your walk speed", 16, 500, function(s) -- min, max
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
 end)
 
--- Notification
-local function showNotification(msg)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0,300,0,80)
-    frame.Position = UDim2.new(1,-320,1,-120)
-    frame.AnchorPoint = Vector2.new(1,1)
-    frame.BackgroundColor3 = theme[currentTheme].bg
-    frame.BackgroundTransparency = 0.3
-    frame.BorderSizePixel = 0
-    frame.Parent = gui
+-- Adjustable Fly
+local flyEnabled = false
+local flySpeed = 50
 
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1,0,1,0)
-    label.BackgroundTransparency = 1
-    label.Text = msg
-    label.TextColor3 = theme[currentTheme].fg
-    label.TextSize = 20
-    label.Font = Enum.Font.GothamBold
-    label.Parent = frame
+MainSection:NewToggle("Fly (Q)", "Press Q or toggle here to fly", function(state)
+    flyEnabled = state
+    local player = game.Players.LocalPlayer
+    local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
+    local UserInputService = game:GetService("UserInputService")
 
-    local tweenIn = TweenService:Create(frame,TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.new(1,-320,1,-120)})
-    tweenIn:Play()
-    tweenIn.Completed:Wait()
-    wait(3)
-    local tweenOut = TweenService:Create(frame,TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Position=UDim2.new(1,-320,1,-220), BackgroundTransparency=1})
-    tweenOut:Play()
-    tweenOut.Completed:Wait()
-    frame:Destroy()
-end
+    if flyEnabled then
+        local bodyVel = Instance.new("BodyVelocity")
+        bodyVel.Velocity = Vector3.new(0,0,0)
+        bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        bodyVel.Parent = humanoidRootPart
 
-showNotification("Welcome to the program")
+        local bodyGyro = Instance.new("BodyGyro")
+        bodyGyro.CFrame = humanoidRootPart.CFrame
+        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bodyGyro.P = 10000
+        bodyGyro.Parent = humanoidRootPart
 
--- Movement Section
-local movementFrame = Instance.new("Frame")
-movementFrame.Size = UDim2.new(1,-20,0,250)
-movementFrame.Position = UDim2.new(0,10,0,60)
-movementFrame.BackgroundTransparency = 0.1
-movementFrame.Parent = mainFrame
-
--- WalkSpeed
-local wsSlider = Instance.new("TextButton")
-wsSlider.Size = UDim2.new(1,0,0,30)
-wsSlider.Position = UDim2.new(0,0,0,10)
-wsSlider.Text = "WalkSpeed: 16"
-wsSlider.Parent = movementFrame
-wsSlider.MouseButton1Click:Connect(function()
-    humanoid.WalkSpeed = 50
-    wsSlider.Text = "WalkSpeed: "..tostring(humanoid.WalkSpeed)
-end)
-
--- JumpPower
-local jpSlider = Instance.new("TextButton")
-jpSlider.Size = UDim2.new(1,0,0,30)
-jpSlider.Position = UDim2.new(0,0,0,50)
-jpSlider.Text = "JumpPower: 50"
-jpSlider.Parent = movementFrame
-jpSlider.MouseButton1Click:Connect(function()
-    humanoid.JumpPower = 100
-    jpSlider.Text = "JumpPower: "..tostring(humanoid.JumpPower)
-end)
-
--- Infinite Jump
-local infJump = false
-UserInputService.JumpRequest:Connect(function()
-    if infJump then humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end
-end)
-local infJumpBtn = Instance.new("TextButton")
-infJumpBtn.Size = UDim2.new(1,0,0,30)
-infJumpBtn.Position = UDim2.new(0,0,0,90)
-infJumpBtn.Text = "Infinite Jump: OFF"
-infJumpBtn.Parent = movementFrame
-infJumpBtn.MouseButton1Click:Connect(function()
-    infJump = not infJump
-    infJumpBtn.Text = "Infinite Jump: "..(infJump and "ON" or "OFF")
-end)
-
--- Noclip
-local noclip = false
-RunService.Stepped:Connect(function()
-    if noclip then
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
+        local connection
+        connection = game:GetService("RunService").RenderStepped:Connect(function()
+            if not flyEnabled then
+                bodyVel:Destroy()
+                bodyGyro:Destroy()
+                connection:Disconnect()
+                return
             end
+            local moveDirection = Vector3.new(0,0,0)
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDirection = moveDirection + workspace.CurrentCamera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDirection = moveDirection - workspace.CurrentCamera.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDirection = moveDirection - workspace.CurrentCamera.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDirection = moveDirection + workspace.CurrentCamera.CFrame.RightVector
+            end
+            bodyVel.Velocity = moveDirection * flySpeed
+            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+        end)
+    end
+end)
+
+MainSection:NewSlider("Fly Speed", "Adjust fly speed", 10, 300, function(s)
+    flySpeed = s
+end)
+
+----------------------------------------------------------------------
+-- JUMP TAB
+----------------------------------------------------------------------
+local JumpTab = Window:NewTab("Jump")
+local JumpSection = JumpTab:NewSection("Jump Controls")
+
+-- Adjustable Jump Power
+JumpSection:NewSlider("Jump Power", "Adjust jump height", 50, 500, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.JumpPower = s
+end)
+
+-- Jump Hack (Infinite Jump)
+local jumpHack = false
+JumpSection:NewToggle("Jump Hack", "Infinite jumping", function(state)
+    jumpHack = state
+    local UserInputService = game:GetService("UserInputService")
+    UserInputService.JumpRequest:Connect(function()
+        if jumpHack then
+            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+        end
+    end)
+end)
+
+-- Double Jump
+local doubleJumpEnabled = false
+JumpSection:NewToggle("Double Jump", "Double jump ability", function(state)
+    doubleJumpEnabled = state
+end)
+
+local canDoubleJump = false
+local UserInputService = game:GetService("UserInputService")
+local player = game.Players.LocalPlayer
+local humanoid = player.Character:WaitForChild("Humanoid")
+
+humanoid.StateChanged:Connect(function(_, newState)
+    if doubleJumpEnabled then
+        if newState == Enum.HumanoidStateType.Freefall then
+            canDoubleJump = true
+        elseif newState == Enum.HumanoidStateType.Landed then
+            canDoubleJump = false
         end
     end
 end)
-local noclipBtn = Instance.new("TextButton")
-noclipBtn.Size = UDim2.new(1,0,0,30)
-noclipBtn.Position = UDim2.new(0,0,0,130)
-noclipBtn.Text = "Noclip: OFF"
-noclipBtn.Parent = movementFrame
-noclipBtn.MouseButton1Click:Connect(function()
-    noclip = not noclip
-    noclipBtn.Text = "Noclip: "..(noclip and "ON" or "OFF")
-end)
 
--- Fly
-local flying = false
-local flySpeed = 50
-local flyBtn = Instance.new("TextButton")
-flyBtn.Size = UDim2.new(1,0,0,30)
-flyBtn.Position = UDim2.new(0,0,0,170)
-flyBtn.Text = "Fly: OFF"
-flyBtn.Parent = movementFrame
-flyBtn.MouseButton1Click:Connect(function()
-    flying = not flying
-    flyBtn.Text = "Fly: "..(flying and "ON" or "OFF")
-end)
-
--- Fly Movement
-local flyDir = Vector3.new()
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode==Enum.KeyCode.W then flyDir = Vector3.new(0,0,-1) end
-    if input.KeyCode==Enum.KeyCode.S then flyDir = Vector3.new(0,0,1) end
-    if input.KeyCode==Enum.KeyCode.A then flyDir = Vector3.new(-1,0,0) end
-    if input.KeyCode==Enum.KeyCode.D then flyDir = Vector3.new(1,0,0) end
-end)
-UserInputService.InputEnded:Connect(function(input)
-    if input.KeyCode==Enum.KeyCode.W or input.KeyCode==Enum.KeyCode.S or input.KeyCode==Enum.KeyCode.A or input.KeyCode==Enum.KeyCode.D then
-        flyDir = Vector3.new()
+UserInputService.JumpRequest:Connect(function()
+    if doubleJumpEnabled and canDoubleJump then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        canDoubleJump = false
     end
 end)
-RunService.RenderStepped:Connect(function(delta)
-    if flying then
-        root.CFrame = root.CFrame + flyDir*flySpeed*delta
-    end
+
+----------------------------------------------------------------------
+-- GRAVITY TAB
+----------------------------------------------------------------------
+local GravityTab = Window:NewTab("Gravity")
+local GravitySection = GravityTab:NewSection("Gravity Control")
+
+GravitySection:NewSlider("Gravity", "Adjust Roblox gravity", 0, 500, function(s)
+    workspace.Gravity = s
 end)
+
+----------------------------------------------------------------------
+-- KEYBINDS TAB
+----------------------------------------------------------------------
+local KeybindsTab = Window:NewTab("Keybinds")
+local KeybindsSection = KeybindsTab:NewSection("Adjust Controls")
+
+KeybindsSection:NewKeybind("Aimbot Toggle", "Enable/Disable Aimbot", Enum.KeyCode.E, function()
+    print("Aimbot key pressed!")
+end)
+
+KeybindsSection:NewKeybind("Jump Hack", "Toggle Jump Hack", Enum.KeyCode.Space, function()
+    jumpHack = not jumpHack
+    print("Jump Hack:", jumpHack)
+end)
+
+KeybindsSection:NewKeybind("Double Jump", "Toggle Double Jump", Enum.KeyCode.F, function()
+    doubleJumpEnabled = not doubleJumpEnabled
+    print("Double Jump:", doubleJumpEnabled)
+end)
+
+----------------------------------------------------------------------
+-- CREDITS TAB
+----------------------------------------------------------------------
+local CreditsTab = Window:NewTab("Credits")
+local CreditsSection = CreditsTab:NewSection("Developer")
+
+CreditsSection:NewLabel("Roben - Developer")
+CreditsSection:NewLabel("Version: Roben V1")
+
+
 
