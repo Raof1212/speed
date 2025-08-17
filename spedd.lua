@@ -1,159 +1,164 @@
--- Roben V1 Script Hub
+--// Roben V1 Script
+--// Developer: Roben | Version: 1
+--// Based on Mercy Script structure, rebranded & customized
 
--- Load UI Library
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("Roben V1", "DarkTheme")
-
-----------------------------------------------------------------------
--- MAIN TAB
-----------------------------------------------------------------------
-local MainTab = Window:NewTab("Main")
-local MainSection = MainTab:NewSection("Movement")
-
--- Adjustable Walk Speed
-MainSection:NewSlider("Walk Speed", "Adjust your walk speed", 16, 500, function(s) -- min, max
-    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
-end)
-
--- Adjustable Fly
-local flyEnabled = false
-local flySpeed = 50
-
-MainSection:NewToggle("Fly (Q)", "Press Q or toggle here to fly", function(state)
-    flyEnabled = state
-    local player = game.Players.LocalPlayer
-    local humanoidRootPart = player.Character:WaitForChild("HumanoidRootPart")
-    local UserInputService = game:GetService("UserInputService")
-
-    if flyEnabled then
-        local bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Velocity = Vector3.new(0,0,0)
-        bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        bodyVel.Parent = humanoidRootPart
-
-        local bodyGyro = Instance.new("BodyGyro")
-        bodyGyro.CFrame = humanoidRootPart.CFrame
-        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        bodyGyro.P = 10000
-        bodyGyro.Parent = humanoidRootPart
-
-        local connection
-        connection = game:GetService("RunService").RenderStepped:Connect(function()
-            if not flyEnabled then
-                bodyVel:Destroy()
-                bodyGyro:Destroy()
-                connection:Disconnect()
-                return
-            end
-            local moveDirection = Vector3.new(0,0,0)
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-                moveDirection = moveDirection + workspace.CurrentCamera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-                moveDirection = moveDirection - workspace.CurrentCamera.CFrame.LookVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-                moveDirection = moveDirection - workspace.CurrentCamera.CFrame.RightVector
-            end
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-                moveDirection = moveDirection + workspace.CurrentCamera.CFrame.RightVector
-            end
-            bodyVel.Velocity = moveDirection * flySpeed
-            bodyGyro.CFrame = workspace.CurrentCamera.CFrame
-        end)
-    end
-end)
-
-MainSection:NewSlider("Fly Speed", "Adjust fly speed", 10, 300, function(s)
-    flySpeed = s
-end)
-
-----------------------------------------------------------------------
--- JUMP TAB
-----------------------------------------------------------------------
-local JumpTab = Window:NewTab("Jump")
-local JumpSection = JumpTab:NewSection("Jump Controls")
-
--- Adjustable Jump Power
-JumpSection:NewSlider("Jump Power", "Adjust jump height", 50, 500, function(s)
-    game.Players.LocalPlayer.Character.Humanoid.JumpPower = s
-end)
-
--- Jump Hack (Infinite Jump)
-local jumpHack = false
-JumpSection:NewToggle("Jump Hack", "Infinite jumping", function(state)
-    jumpHack = state
-    local UserInputService = game:GetService("UserInputService")
-    UserInputService.JumpRequest:Connect(function()
-        if jumpHack then
-            game.Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
-        end
-    end)
-end)
-
--- Double Jump
-local doubleJumpEnabled = false
-JumpSection:NewToggle("Double Jump", "Double jump ability", function(state)
-    doubleJumpEnabled = state
-end)
-
-local canDoubleJump = false
+--// Services
 local UserInputService = game:GetService("UserInputService")
-local player = game.Players.LocalPlayer
-local humanoid = player.Character:WaitForChild("Humanoid")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Humanoid = LocalPlayer.Character:WaitForChild("Humanoid")
 
-humanoid.StateChanged:Connect(function(_, newState)
-    if doubleJumpEnabled then
-        if newState == Enum.HumanoidStateType.Freefall then
-            canDoubleJump = true
-        elseif newState == Enum.HumanoidStateType.Landed then
-            canDoubleJump = false
+--// UI Library (Mercy Script base)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/Hm5011/hussain/refs/heads/main/Mercy%20Script"))()
+local Window = Library:CreateWindow("Roben V1")
+
+--// Settings storage
+local Settings = {
+    Aimbot = {Enabled = false, Key = Enum.KeyCode.E},
+    Fly = {Enabled = false, Key = Enum.KeyCode.Q, Speed = 50},
+    Speed = {Value = 16},
+    Jump = {Power = 50, DoubleJump = false, Key = Enum.KeyCode.Space},
+    Gravity = {Value = workspace.Gravity},
+    UIToggle = Enum.KeyCode.RightShift,
+}
+
+-- Load saved settings if exist
+pcall(function()
+    local data = game:GetService("HttpService"):JSONDecode(readfile("RobenV1_Settings.json"))
+    if data then Settings = data end
+end)
+
+local function SaveSettings()
+    writefile("RobenV1_Settings.json", game:GetService("HttpService"):JSONEncode(Settings))
+end
+
+--// Main Tab (Aimbot)
+local Main = Window:CreateTab("Main")
+Main:CreateToggle("Aimbot", Settings.Aimbot.Enabled, function(state)
+    Settings.Aimbot.Enabled = state
+    SaveSettings()
+end)
+
+--// Movement Tab
+local Movement = Window:CreateTab("Movement")
+Movement:CreateSlider("Speed", 16, 200, Settings.Speed.Value, function(val)
+    Settings.Speed.Value = val
+    Humanoid.WalkSpeed = val
+    SaveSettings()
+end)
+
+Movement:CreateSlider("Fly Speed", 10, 200, Settings.Fly.Speed, function(val)
+    Settings.Fly.Speed = val
+    SaveSettings()
+end)
+
+Movement:CreateToggle("Fly", Settings.Fly.Enabled, function(state)
+    Settings.Fly.Enabled = state
+    SaveSettings()
+end)
+
+Movement:CreateSlider("Jump Power", 50, 300, Settings.Jump.Power, function(val)
+    Settings.Jump.Power = val
+    Humanoid.JumpPower = val
+    SaveSettings()
+end)
+
+Movement:CreateToggle("Double Jump", Settings.Jump.DoubleJump, function(state)
+    Settings.Jump.DoubleJump = state
+    SaveSettings()
+end)
+
+Movement:CreateSlider("Gravity", 0, 500, Settings.Gravity.Value, function(val)
+    Settings.Gravity.Value = val
+    workspace.Gravity = val
+    SaveSettings()
+end)
+
+--// Keybinds Tab
+local Keybinds = Window:CreateTab("Keybinds")
+Keybinds:CreateKeybind("Aimbot Key", Settings.Aimbot.Key, function(key)
+    Settings.Aimbot.Key = key
+    SaveSettings()
+end)
+Keybinds:CreateKeybind("Fly Toggle", Settings.Fly.Key, function(key)
+    Settings.Fly.Key = key
+    SaveSettings()
+end)
+Keybinds:CreateKeybind("Double Jump Key", Settings.Jump.Key, function(key)
+    Settings.Jump.Key = key
+    SaveSettings()
+end)
+Keybinds:CreateKeybind("UI Toggle", Settings.UIToggle, function(key)
+    Settings.UIToggle = key
+    Library:SetToggleKey(key)
+    SaveSettings()
+end)
+
+--// Credits Tab
+local Credits = Window:CreateTab("Credits")
+Credits:CreateLabel("Roben – Developer")
+Credits:CreateLabel("Version 1")
+
+--// Features Logic
+-- Fly logic
+local flying = false
+local bodyVel, bodyGyro
+
+local function StartFly()
+    if not flying then
+        flying = true
+        local char = LocalPlayer.Character
+        local root = char:WaitForChild("HumanoidRootPart")
+
+        bodyVel = Instance.new("BodyVelocity", root)
+        bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+
+        bodyGyro = Instance.new("BodyGyro", root)
+        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    end
+end
+
+local function StopFly()
+    flying = false
+    if bodyVel then bodyVel:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+end
+
+-- Fly handler
+game:GetService("RunService").Heartbeat:Connect(function()
+    if flying and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local root = LocalPlayer.Character.HumanoidRootPart
+        bodyVel.Velocity = (LocalPlayer:GetMouse().Hit.p - root.Position).unit * Settings.Fly.Speed
+        bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+    end
+end)
+
+-- Double Jump handler
+local jumpCount = 0
+Humanoid.StateChanged:Connect(function(_, new)
+    if new == Enum.HumanoidStateType.Landed then
+        jumpCount = 0
+    elseif new == Enum.HumanoidStateType.Jumping then
+        jumpCount += 1
+        if jumpCount == 2 and Settings.Jump.DoubleJump then
+            Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end
 end)
 
-UserInputService.JumpRequest:Connect(function()
-    if doubleJumpEnabled and canDoubleJump then
-        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        canDoubleJump = false
+-- Input handling for toggles
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Settings.Fly.Key then
+        if flying then StopFly() else StartFly() end
     end
 end)
 
-----------------------------------------------------------------------
--- GRAVITY TAB
-----------------------------------------------------------------------
-local GravityTab = Window:NewTab("Gravity")
-local GravitySection = GravityTab:NewSection("Gravity Control")
+-- Apply saved values on load
+Humanoid.WalkSpeed = Settings.Speed.Value
+Humanoid.JumpPower = Settings.Jump.Power
+workspace.Gravity = Settings.Gravity.Value
+Library:SetToggleKey(Settings.UIToggle)
 
-GravitySection:NewSlider("Gravity", "Adjust Roblox gravity", 0, 500, function(s)
-    workspace.Gravity = s
-end)
+-- Done ✅
 
-----------------------------------------------------------------------
--- KEYBINDS TAB
-----------------------------------------------------------------------
-local KeybindsTab = Window:NewTab("Keybinds")
-local KeybindsSection = KeybindsTab:NewSection("Adjust Controls")
-
-KeybindsSection:NewKeybind("Aimbot Toggle", "Enable/Disable Aimbot", Enum.KeyCode.E, function()
-    print("Aimbot key pressed!")
-end)
-
-KeybindsSection:NewKeybind("Jump Hack", "Toggle Jump Hack", Enum.KeyCode.Space, function()
-    jumpHack = not jumpHack
-    print("Jump Hack:", jumpHack)
-end)
-
-KeybindsSection:NewKeybind("Double Jump", "Toggle Double Jump", Enum.KeyCode.F, function()
-    doubleJumpEnabled = not doubleJumpEnabled
-    print("Double Jump:", doubleJumpEnabled)
-end)
-
-----------------------------------------------------------------------
--- CREDITS TAB
-----------------------------------------------------------------------
-local CreditsTab = Window:NewTab("Credits")
-local CreditsSection = CreditsTab:NewSection("Developer")
-
-CreditsSection:NewLabel("Roben - Developer")
-CreditsSection:NewLabel("Version: Roben V1")
