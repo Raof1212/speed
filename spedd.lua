@@ -1,34 +1,97 @@
--- Combined Speed & Jump Toggle Script (LocalScript)
---// Example Script Hub
+-- Roben V1 Script Hub
+
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("MyHub V1", "DarkTheme")
+local Window = Library.CreateLib("Roben V1", "DarkTheme")
 
--- Tabs
-local Tab1 = Window:NewTab("Target")
-local Tab2 = Window:NewTab("Client")
-local Tab3 = Window:NewTab("Misc")
-local Tab4 = Window:NewTab("Credits")
+-- MAIN TAB
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Main Features")
 
--- Sections
-local Section1 = Tab1:NewSection("Target Tools")
-Section1:NewButton("Set Nearest", "Locks onto nearest player", function()
-    print("Nearest player locked")
+MainSection:NewButton("Speed Hack", "Increase walk speed", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    character.Humanoid.WalkSpeed = 100
 end)
 
-Section1:NewTextBox("Input Target", "Enter username", function(txt)
-    print("Target: "..txt)
+MainSection:NewButton("Fly (Q)", "Press Q to toggle fly", function()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+    local flying = false
+    local speed = 5
+    local bodyVel
+    local bodyGyro
+
+    mouse.KeyDown:Connect(function(key)
+        if key == "q" then
+            flying = not flying
+            if flying then
+                local humanoidRootPart = player.Character.HumanoidRootPart
+                bodyVel = Instance.new("BodyVelocity")
+                bodyVel.Velocity = Vector3.new(0,0,0)
+                bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                bodyVel.Parent = humanoidRootPart
+
+                bodyGyro = Instance.new("BodyGyro")
+                bodyGyro.CFrame = humanoidRootPart.CFrame
+                bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                bodyGyro.P = 10000
+                bodyGyro.Parent = humanoidRootPart
+
+                game:GetService("RunService").RenderStepped:Connect(function()
+                    if flying then
+                        local moveDirection = Vector3.new(0,0,0)
+                        if game.UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                            moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.LookVector)
+                        end
+                        if game.UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                            moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.LookVector)
+                        end
+                        if game.UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                            moveDirection = moveDirection - (workspace.CurrentCamera.CFrame.RightVector)
+                        end
+                        if game.UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                            moveDirection = moveDirection + (workspace.CurrentCamera.CFrame.RightVector)
+                        end
+                        bodyVel.Velocity = moveDirection * speed
+                        bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+                    end
+                end)
+            else
+                if bodyVel then bodyVel:Destroy() end
+                if bodyGyro then bodyGyro:Destroy() end
+            end
+        end
+    end)
 end)
 
-Section1:NewButton("Goto Player", "Teleports to target", function()
-    print("Teleporting...")
+-- KEYBINDS TAB
+local KeybindsTab = Window:NewTab("Keybinds")
+local KeybindsSection = KeybindsTab:NewSection("Adjust Controls")
+
+-- Aimbot Keybind
+KeybindsSection:NewKeybind("Aimbot Toggle", "Enable/Disable Aimbot", Enum.KeyCode.E, function()
+    print("Aimbot key pressed!")
+    -- your aimbot toggle logic goes here
 end)
 
--- Example Trolling Section
-local Section2 = Tab3:NewSection("Trolling")
-Section2:NewButton("Copy Username", "Copies username", function()
-    setclipboard(game.Players.LocalPlayer.Name)
+-- Jump Hack Keybind
+KeybindsSection:NewKeybind("Jump Hack", "Toggle Jump Hack", Enum.KeyCode.Space, function()
+    print("Jump Hack triggered!")
+    -- your jump hack logic goes here
 end)
 
+-- Double Jump Hack Keybind
+KeybindsSection:NewKeybind("Double Jump", "Activate Double Jump", Enum.KeyCode.F, function()
+    print("Double Jump triggered!")
+    -- your double jump logic goes here
+end)
+
+-- CREDITS TAB
+local CreditsTab = Window:NewTab("Credits")
+local CreditsSection = CreditsTab:NewSection("Developer")
+
+CreditsSection:NewLabel("Roben - Developer")
+CreditsSection:NewLabel("Version: Roben V1")
 
 
 
