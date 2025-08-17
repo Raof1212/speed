@@ -1,194 +1,180 @@
--- Roben V1 Messy Working Loadstring
-local _p=game.Players.LocalPlayer
-local _pg=_p:WaitForChild("PlayerGui")
-local _u=_pg:FindFirstChild("RobenV1") or Instance.new("ScreenGui")
-_u.Name="RobenV1"
-_u.ResetOnSpawn=false
-_u.Parent=_pg
+loadstring(game:HttpGet("https://pastebin.com/raw/your-paste-id", true))()
 
--- Main frame
-local _f=Instance.new("Frame")
-_f.Size=UDim2.new(0,400,0,500)
-_f.Position=UDim2.new(0.5,-200,0.5,-250)
-_f.BackgroundColor3=Color3.fromRGB(30,30,30)
-_f.BorderSizePixel=0
-_f.Parent=_u
+--[[ 
+Replace the Pastebin URL with a hosted version of the full script below if needed.
+This is the single-file version. Copy-paste into a local script or executor.
+--]]
 
--- Tabs table
-local _tabs={}
-local function _CreateTab(name)
-    local t=Instance.new("Frame")
-    t.Name=name
-    t.Size=UDim2.new(1,0,1,0)
-    t.BackgroundTransparency=1
-    t.Visible=false
-    t.Parent=_f
-    _tabs[name]=t
-    return t
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local root = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.ResetOnSpawn = false
+
+-- Theme Colors
+local theme = {Dark={bg=Color3.fromRGB(25,25,25), fg=Color3.fromRGB(255,255,255)}, Light={bg=Color3.fromRGB(245,245,245), fg=Color3.fromRGB(0,0,0)}}
+local currentTheme = "Dark"
+
+-- Main Frame
+local mainFrame = Instance.new("Frame", gui)
+mainFrame.Size = UDim2.new(0,400,0,500)
+mainFrame.Position = UDim2.new(0.5,-200,0.5,-250)
+mainFrame.BackgroundColor3 = theme[currentTheme].bg
+mainFrame.BorderSizePixel = 0
+mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+
+-- Title
+local title = Instance.new("TextLabel", mainFrame)
+title.Size = UDim2.new(1,0,0,50)
+title.Text = "Roben Dashboard"
+title.BackgroundTransparency = 1
+title.TextColor3 = theme[currentTheme].fg
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+
+-- Theme Toggle Button
+local themeBtn = Instance.new("TextButton", mainFrame)
+themeBtn.Size = UDim2.new(0,120,0,40)
+themeBtn.Position = UDim2.new(1,-130,0,10)
+themeBtn.Text = "Toggle Theme"
+themeBtn.BackgroundColor3 = theme[currentTheme].bg
+themeBtn.TextColor3 = theme[currentTheme].fg
+themeBtn.Font = Enum.Font.Gotham
+themeBtn.TextSize = 14
+
+themeBtn.MouseButton1Click:Connect(function()
+    currentTheme = currentTheme=="Dark" and "Light" or "Dark"
+    mainFrame.BackgroundColor3 = theme[currentTheme].bg
+    title.TextColor3 = theme[currentTheme].fg
+    themeBtn.BackgroundColor3 = theme[currentTheme].bg
+    themeBtn.TextColor3 = theme[currentTheme].fg
+end)
+
+-- Notification Function
+local function showNotification(msg)
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0,300,0,80)
+    frame.Position = UDim2.new(1,-320,1,-120)
+    frame.AnchorPoint = Vector2.new(1,1)
+    frame.BackgroundColor3 = theme[currentTheme].bg
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 0
+
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Text = msg
+    label.TextColor3 = theme[currentTheme].fg
+    label.TextSize = 20
+    label.Font = Enum.Font.GothamBold
+
+    local tweenIn = TweenService:Create(frame, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.new(1,-320,1,-120)})
+    tweenIn:Play()
+    tweenIn.Completed:Wait()
+    wait(3)
+    local tweenOut = TweenService:Create(frame, TweenInfo.new(0.5,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Position=UDim2.new(1,-320,1,-220), BackgroundTransparency=1})
+    tweenOut:Play()
+    tweenOut.Completed:Wait()
+    frame:Destroy()
 end
 
-local _Movement=_CreateTab("Movement")
-local _Combat=_CreateTab("Combat")
-local _Visuals=_CreateTab("Visuals")
-local _Keybinds=_CreateTab("Keybinds")
-local _Credits=_CreateTab("Credits")
-_Movement.Visible=true
+showNotification("Welcome to the program")
 
--- Tab buttons
-local _btns={}
-for i,n in pairs({"Movement","Combat","Visuals","Keybinds","Credits"}) do
-    local b=Instance.new("TextButton")
-    b.Text=n
-    b.Size=UDim2.new(0,80,0,30)
-    b.Position=UDim2.new(0,5+(i-1)*85,0,5)
-    b.BackgroundColor3=Color3.fromRGB(40,40,40)
-    b.BorderSizePixel=0
-    b.TextColor3=Color3.new(1,1,1)
-    b.Parent=_f
-    b.MouseButton1Click:Connect(function()
-        for _,v in pairs(_tabs) do v.Visible=false end
-        _tabs[n].Visible=true
-    end)
-    _btns[n]=b
-end
+-- Movement Section
+local movementFrame = Instance.new("Frame", mainFrame)
+movementFrame.Size = UDim2.new(1,-20,0,250)
+movementFrame.Position = UDim2.new(0,10,0,60)
+movementFrame.BackgroundTransparency = 0.1
 
--- Settings table
-local _S={}
-_S.WalkSpeed=16
-_S.JumpPower=50
-_S.Gravity=196.2
-_S.FlySpeed=50
-_S.Flying=false
+-- WalkSpeed Slider
+local wsSlider = Instance.new("TextButton", movementFrame)
+wsSlider.Size = UDim2.new(1,0,0,30)
+wsSlider.Position = UDim2.new(0,0,0,10)
+wsSlider.Text = "WalkSpeed: 16"
+wsSlider.MouseButton1Click:Connect(function()
+    humanoid.WalkSpeed = 50
+    wsSlider.Text = "WalkSpeed: "..tostring(humanoid.WalkSpeed)
+end)
 
--- Wait for character
-local function _GetHumanoid()
-    local c=_p.Character or _p.CharacterAdded:Wait()
-    return c:WaitForChild("Humanoid"),c:WaitForChild("HumanoidRootPart")
-end
+-- JumpPower Slider
+local jpSlider = Instance.new("TextButton", movementFrame)
+jpSlider.Size = UDim2.new(1,0,0,30)
+jpSlider.Position = UDim2.new(0,0,0,50)
+jpSlider.Text = "JumpPower: 50"
+jpSlider.MouseButton1Click:Connect(function()
+    humanoid.JumpPower = 100
+    jpSlider.Text = "JumpPower: "..tostring(humanoid.JumpPower)
+end)
 
--- WalkSpeed
-function _S:SetWalkSpeed(v)
-    local h,_= _GetHumanoid()
-    h.WalkSpeed=v
-end
-
--- JumpPower
-function _S:SetJumpPower(v)
-    local h,_=_GetHumanoid()
-    h.UseJumpPower=true
-    h.JumpPower=v
-end
-
--- Gravity
-function _S:SetGravity(v)
-    workspace.Gravity=v
-end
-
--- Fly
-function _S:Fly(toggle)
-    local h,r=_GetHumanoid()
-    _S.Flying=toggle
-    if toggle then
-        local bv=Instance.new("BodyVelocity")
-        bv.MaxForce=Vector3.new(4000,4000,4000)
-        bv.Velocity=Vector3.new(0,0,0)
-        bv.Parent=r
-        spawn(function()
-            local UIS=game:GetService("UserInputService")
-            while _S.Flying do
-                local mv=Vector3.new()
-                if UIS:IsKeyDown(Enum.KeyCode.W) then mv=mv + workspace.CurrentCamera.CFrame.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then mv=mv - workspace.CurrentCamera.CFrame.LookVector end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then mv=mv - workspace.CurrentCamera.CFrame.RightVector end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then mv=mv + workspace.CurrentCamera.CFrame.RightVector end
-                bv.Velocity=mv*_S.FlySpeed
-                task.wait()
-            end
-            bv:Destroy()
-        end)
+-- Infinite Jump
+local infJump = false
+UserInputService.JumpRequest:Connect(function()
+    if infJump then
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
     end
-end
+end)
+local infJumpBtn = Instance.new("TextButton", movementFrame)
+infJumpBtn.Size = UDim2.new(1,0,0,30)
+infJumpBtn.Position = UDim2.new(0,0,0,90)
+infJumpBtn.Text = "Infinite Jump: OFF"
+infJumpBtn.MouseButton1Click:Connect(function()
+    infJump = not infJump
+    infJumpBtn.Text = "Infinite Jump: "..(infJump and "ON" or "OFF")
+end)
 
--- Slider creator
-local function _Slider(tab,name,min,max,def,callback)
-    local s=Instance.new("TextButton")
-    s.Text=name..": "..tostring(def)
-    s.Size=UDim2.new(0,200,0,25)
-    s.Position=UDim2.new(0,10,0,10+#tab:GetChildren()*30)
-    s.BackgroundColor3=Color3.fromRGB(50,50,50)
-    s.TextColor3=Color3.new(1,1,1)
-    s.Parent=tab
-    local val=def
-    s.MouseButton1Click:Connect(function()
-        val=val+1
-        if val>max then val=min end
-        s.Text=name..": "..tostring(val)
-        callback(val)
-    end)
-end
-
--- Movement sliders
-_Slider(_Movement,"WalkSpeed",0,500,_S.WalkSpeed,function(v) _S:SetWalkSpeed(v) end)
-_Slider(_Movement,"JumpPower",0,500,_S.JumpPower,function(v) _S:SetJumpPower(v) end)
-_Slider(_Movement,"Gravity",0,500,_S.Gravity,function(v) _S:SetGravity(v) end)
-_Slider(_Movement,"FlySpeed",1,200,_S.FlySpeed,function(v) _S.FlySpeed=v end)
-
--- Toggle creator
-local function _Toggle(tab,name,def,callback)
-    local t=Instance.new("TextButton")
-    t.Text=name..": "..tostring(def)
-    t.Size=UDim2.new(0,200,0,25)
-    t.Position=UDim2.new(0,10,0,10+#tab:GetChildren()*30)
-    t.BackgroundColor3=Color3.fromRGB(50,50,50)
-    t.TextColor3=Color3.new(1,1,1)
-    t.Parent=tab
-    local state=def
-    t.MouseButton1Click:Connect(function()
-        state=not state
-        t.Text=name..": "..tostring(state)
-        callback(state)
-    end)
-end
-
--- Fly toggle
-_Toggle(_Movement,"Fly",false,function(v) _S:Fly(v) end)
-
--- Keybinds
-local _K={["UI Toggle"]=Enum.KeyCode.RightShift,["Fly"]=Enum.KeyCode.E,["Jump"]=Enum.KeyCode.Space}
-game:GetService("UserInputService").InputBegan:Connect(function(input,gp)
-    if not gp then
-        for n,k in pairs(_K) do
-            if input.KeyCode==k then
-                if n=="UI Toggle" then _u.Enabled=not _u.Enabled end
-                if n=="Fly" then _S:Fly(not _S.Flying) end
+-- Noclip
+local noclip = false
+RunService.Stepped:Connect(function()
+    if noclip then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
             end
         end
     end
 end)
+local noclipBtn = Instance.new("TextButton", movementFrame)
+noclipBtn.Size = UDim2.new(1,0,0,30)
+noclipBtn.Position = UDim2.new(0,0,0,130)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    noclipBtn.Text = "Noclip: "..(noclip and "ON" or "OFF")
+end)
 
--- Credits
-local cl=Instance.new("TextLabel")
-cl.Text="Roben V1 - Messy UI by RaOf"
-cl.Size=UDim2.new(0,380,0,50)
-cl.Position=UDim2.new(0,10,0,10)
-cl.BackgroundTransparency=1
-cl.TextColor3=Color3.new(1,1,1)
-cl.TextScaled=true
-cl.Parent=_Credits
+-- Fly
+local flying = false
+local flySpeed = 50
+local flyBtn = Instance.new("TextButton", movementFrame)
+flyBtn.Size = UDim2.new(1,0,0,30)
+flyBtn.Position = UDim2.new(0,0,0,170)
+flyBtn.Text = "Fly: OFF"
+flyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    flyBtn.Text = "Fly: "..(flying and "ON" or "OFF")
+end)
 
--- Placeholder tabs
-local function _PH(tab)
-    local l=Instance.new("TextLabel")
-    l.Text="Placeholder"
-    l.Size=UDim2.new(0,380,0,50)
-    l.Position=UDim2.new(0,10,0,10)
-    l.BackgroundTransparency=1
-    l.TextColor3=Color3.new(1,1,1)
-    l.TextScaled=true
-    l.Parent=tab
-end
-_PH(_Combat)
-_PH(_Visuals)
-_PH(_Keybinds)
-
-print("Roben V1 loaded (messy working version, all tabs, universal settings ready)")
+-- Fly Logic
+local flyDir = Vector3.new()
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W then flyDir = Vector3.new(0,0,-1) end
+    if input.KeyCode == Enum.KeyCode.S then flyDir = Vector3.new(0,0,1) end
+    if input.KeyCode == Enum.KeyCode.A then flyDir = Vector3.new(-1,0,0) end
+    if input.KeyCode == Enum.KeyCode.D then flyDir = Vector3.new(1,0,0) end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.KeyCode==Enum.KeyCode.W or input.KeyCode==Enum.KeyCode.S or input.KeyCode==Enum.KeyCode.A or input.KeyCode==Enum.KeyCode.D then
+        flyDir = Vector3.new()
+    end
+end)
+RunService.RenderStepped:Connect(function(delta)
+    if flying then
+        root.CFrame = root.CFrame + flyDir * flySpeed * delta
+    end
+end)
