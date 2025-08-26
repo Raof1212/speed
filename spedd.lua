@@ -91,39 +91,30 @@ if GUI then GUI:Destroy() end
 GUI = mk("ScreenGui",{Name="RobenFancyDashboard",Parent=playerGui,ResetOnSpawn=false})
 
 -- outer window
--- NOTE: ClipsDescendants is set to false so dropdown menus can expand outside panels without being cut off.
-local Window = mk("Frame",{Name="Window",Parent=GUI,Size=UDim2.new(0,720,0,460),Position=UDim2.new(0.5,-360,0.5,-230),BackgroundColor3=Color3.fromRGB(18,18,20),BorderSizePixel=0,ClipsDescendants=false})
+local Window = mk("Frame",{Name="Window",Parent=GUI,Size=UDim2.new(0,720,0,460),Position=UDim2.new(0.5,-360,0.5,-230),BackgroundColor3=Color3.fromRGB(18,18,20),BorderSizePixel=0,ClipsDescendants=true})
 mk("UICorner",{Parent=Window,CornerRadius=UDim.new(0,6)})
-
--- Make the window draggable (click + drag anywhere on Window to move)
-do
-    local dragging, dragStart, startPos
-    local function onInputBegan(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = Window.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
+local dragInput, dragStart, startPos, dragging
+Window.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and input.Position.Y - Window.AbsolutePosition.Y <= 30 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Window.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
     end
-    local function onInputChanged(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
-            Window.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
     end
-    Window.InputBegan:Connect(onInputBegan)
-    UserInputService.InputChanged:Connect(onInputChanged)
-end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        Window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
 -- left nav
 local Nav = mk("Frame",{Name="Nav",Parent=Window,Size=UDim2.new(0,160,1,0),Position=UDim2.new(0,0,0,0),BackgroundColor3=Color3.fromRGB(28,28,30)})
@@ -148,11 +139,10 @@ local function createNavButton(name,order)
     return btn
 end
 
--- right content area (container for panels)
-local Content = mk("Frame",{Name="Content",Parent=Window,Size=UDim2.new(1,-160,1,0),Position=UDim2.new(0,160,0,0),BackgroundColor3=Color3.fromRGB(24,24,26)})
+-- right content area
+local Content = mk("ScrollingFrame",{Name="Content",Parent=Window,Size=UDim2.new(1,-160,1,0),Position=UDim2.new(0,160,0,0),BackgroundColor3=Color3.fromRGB(24,24,26),ScrollBarThickness=6,CanvasSize=UDim2.new(0,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y})
+
 mk("UICorner",{Parent=Content,CornerRadius=UDim.new(0,6)})
--- allow children dropdowns to expand beyond panel
-Content.ClipsDescendants = false
 
 -- helper to clear content
 local function clearContent()
@@ -166,25 +156,7 @@ end
 -- create panels for each section
 for i,name in ipairs(sections) do
     local btn = createNavButton(name,i)
-    -- create a ScrollingFrame instead of a simple Frame so content can scroll
-    local panel = mk("ScrollingFrame",{
-        Name = name .. "Panel",
-        Parent = Content,
-        Size = UDim2.new(1, -20, 1, -20),
-        Position = UDim2.new(0,10,0,10),
-        BackgroundTransparency = 1,
-        Visible = (name=="Movement"),
-        ScrollBarThickness = 8,
-        CanvasSize = UDim2.new(0,0,0,0),
-        ClipsDescendants = false -- allow dropdowns to show
-    })
-    -- add layout to auto-size canvas
-    local list = mk("UIListLayout",{Parent=panel,Padding=UDim.new(0,8)})
-    list.SortOrder = Enum.SortOrder.LayoutOrder
-    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        panel.CanvasSize = UDim2.new(0,0,0,list.AbsoluteContentSize.Y + 12)
-    end)
-
+    local panel = mk("Frame",{Name=name .. "Panel",Parent=Content,Size=UDim2.new(1, -20, 1, -20),Position=UDim2.new(0,10,0,10),BackgroundTransparency=1,Visible=(name=="Movement")})
     Panels[name] = panel
     btn.MouseButton1Click:Connect(function()
         for k,v in pairs(Panels) do v.Visible=false end
@@ -194,10 +166,9 @@ end
 
 -- ===== Movement Panel content =====
 local Mov = Panels["Movement"]
--- (mvLayout no longer needed because ScrollingFrame already has UIListLayout)
--- local mvLayout = mk("UIListLayout",{Parent=Mov,Padding=UDim.new(0,8)})
--- mvLayout.Padding = UDim.new(0,10)
--- mvLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local mvLayout = mk("UIListLayout",{Parent=Mov,Padding=UDim.new(0,8)})
+mvLayout.Padding = UDim.new(0,10)
+mvLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- helper builders for controls
 local function makeRow(parent, labelText)
@@ -246,7 +217,7 @@ local function sliderFactory(parent, label, min, max, initial, onChange)
     return function(v)
         local norm = (v-min)/(max-min)
         fill.Size = UDim2.new(math.clamp(norm,0,1),0,1,0)
-        valueLabel.Text = tostring(v)
+        valueLabel.Text = tostring(math.floor(v))
         if onChange then pcall(onChange,v) end
     end
 end
@@ -254,17 +225,17 @@ end
 -- toggle factory
 local function toggleFactory(parent,label,initial,onChange)
     local row,labelObj,right = makeRow(parent,label)
-    local btn = mk("TextButton",{Parent=right,Text=tostring(initial),Size=UDim2.new(0,120,0,28),Position=UDim2.new(1,-130,0,8),BackgroundColor3=Color3.fromRGB(46,46,48),BorderSizePixel=0,Font=Enum.Font.Gotham,TextSize=14})
+    local btn = mk("TextButton",{Parent=right,Text=(initial and "ON" or "OFF"),Size=UDim2.new(0,120,0,28),Position=UDim2.new(1,-130,0,8),BackgroundColor3=Color3.fromRGB(46,46,48),BorderSizePixel=0,Font=Enum.Font.Gotham,TextSize=14})
     mk("UICorner",{Parent=btn,CornerRadius=UDim.new(0,6)})
     local state = initial
     btn.MouseButton1Click:Connect(function()
         state = not state
-        btn.Text = tostring(state)
+        btn.Text = state and "ON" or "OFF"
         pcall(onChange,state)
     end)
     return function(v)
         state = v
-        btn.Text = tostring(state)
+        btn.Text = state and "ON" or "OFF"
         pcall(onChange,state)
     end
 end
@@ -272,35 +243,21 @@ end
 -- dropdown factory (simple)
 local function dropdownFactory(parent,label, options, initial, onChange)
     local row,labelObj,right = makeRow(parent,label)
-    local box = mk("TextButton",{Parent=right,Text=tostring(initial),Size=UDim2.new(0,160,0,28),Position=UDim2.new(1,-180,0,8),BackgroundColor3=Color3.fromRGB(46,46,48),Font=Enum.Font.Gotham,TextSize=14})
+    local box = mk("TextButton",{Parent=right,Text="Current: "..tostring(initial),Size=UDim2.new(0,160,0,28),Position=UDim2.new(1,-180,0,8),BackgroundColor3=Color3.fromRGB(46,46,48),Font=Enum.Font.Gotham,TextSize=14})
     mk("UICorner",{Parent=box,CornerRadius=UDim.new(0,6)})
-    -- menu parented to overall GUI (so it's not clipped by scrolling); we will parent to Window to be safe, and position it relative to box
-    local menu = mk("Frame",{Parent=Window,Visible=false,Size=UDim2.new(0,160,0,#options*28),BackgroundColor3=Color3.fromRGB(36,36,38)})
+    local menu = mk("Frame",{Parent=box,Visible=false,Size=UDim2.new(1,0,0,#options*28),Position=UDim2.new(0,0,1,6),BackgroundColor3=Color3.fromRGB(36,36,38)})
     mk("UICorner",{Parent=menu,CornerRadius=UDim.new(0,6)})
-    -- position menu below the box whenever opened
-    local function updateMenuPos()
-        local absPos = box.AbsolutePosition
-        menu.Position = UDim2.new(0, absPos.X - Window.AbsolutePosition.X, 0, absPos.Y - Window.AbsolutePosition.Y + box.AbsoluteSize.Y + 6)
-    end
     for i,opt in ipairs(options) do
         local it = mk("TextButton",{Parent=menu,Text=opt,Size=UDim2.new(1,0,0,28),Position=UDim2.new(0,0,0,(i-1)*28),BackgroundColor3=Color3.fromRGB(46,46,48),Font=Enum.Font.Gotham,TextSize=14})
         it.MouseButton1Click:Connect(function()
-            box.Text = opt
+            box.Text = "Current: "..opt
             menu.Visible = false
             if onChange then pcall(onChange,opt) end
         end)
     end
-    box.MouseButton1Click:Connect(function()
-        if not menu.Visible then
-            updateMenuPos()
-        end
-        menu.Visible = not menu.Visible
-    end)
-    -- update menu position when window or box moves/resizes
-    box:GetPropertyChangedSignal("AbsolutePosition"):Connect(function() if menu.Visible then updateMenuPos() end end)
-    Window:GetPropertyChangedSignal("AbsolutePosition"):Connect(function() if menu.Visible then updateMenuPos() end end)
+    box.MouseButton1Click:Connect(function() menu.Visible = not menu.Visible end)
     return function(v)
-        box.Text = tostring(v)
+        box.Text = "Current: "..tostring(v)
         if onChange then pcall(onChange,v) end
     end
 end
@@ -492,11 +449,7 @@ local function updateFly(dt)
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec = moveVec + cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVec = moveVec + Vector3.new(0,1,0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveVec = moveVec - Vector3.new(0,1,0) end
-        if moveVec.Magnitude > 0 then
-            bodyVelFly.Velocity = moveVec.Unit * S.FlySpeed
-        else
-            bodyVelFly.Velocity = Vector3.new(0,0,0)
-        end
+        bodyVelFly.Velocity = moveVec.Unit == moveVec and moveVec * S.FlySpeed or Vector3.new(0,0,0)
     else -- CFrame move
         if bodyVelFly then bodyVelFly:Destroy(); bodyVelFly=nil end
         local speed = S.FlySpeed * dt * 60
@@ -681,4 +634,6 @@ pcall(function() local _,_,h = getCharacter(); if h then h.WalkSpeed = S.WalkSpe
 print("Roben Fancy Dashboard loaded - Movement features active. Toggle UI with", tostring(S.Keybinds.UI_Toggle))
 
 -- End of script
+
+
 
